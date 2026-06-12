@@ -1,0 +1,13 @@
+# prometheus/prometheus.yml
+global:
+  scrape_interval: 15s      # How often Prometheus scrapes each target
+  evaluation_interval: 15s  # How often alerting rules are evaluated (Ch 2)
+
+scrape_configs:
+  - job_name: "checkout-service"
+    static_configs:
+      - targets: ["checkout-service:8000"]
+    # Prometheus adds these labels to every metric from this target:
+    #   job="checkout-service"
+    #   instance="checkout-service:8000"
+    # These become queryable dimensions in PromQL.
