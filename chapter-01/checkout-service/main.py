@@ -6,10 +6,8 @@ from prometheus_client import (
     Counter,
     Histogram,
     Gauge,
-    Summary,
     generate_latest,
     CONTENT_TYPE_LATEST,
-    CollectorRegistry,
     REGISTRY,
 )
 
@@ -34,7 +32,7 @@ REQUEST_COUNTER = Counter(
 
 REQUEST_ERRORS = Counter(
     "http_request_errors_total",
-    "HTTP request duration in seconds",
+    "Total number of failed HTTP requests",
     ["handler"],
 )
 
