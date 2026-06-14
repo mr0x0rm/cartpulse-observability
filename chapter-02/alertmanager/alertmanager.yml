@@ -1,0 +1,80 @@
+# alertmanager/alertmanager.yml
+global:
+  # How long to wait before sending a repeat notification for an ongoing alert
+  resolve_timeout: 5m
+
+# The routing tree: each incoming alert is matched top-to-bottom.
+# The first matching route wins.
+route:
+  # Default receiver if no child route matches
+  receiver: "slack-platform"
+
+  # Group alerts by these label dimensions.
+  # Alerts with the same (alertname, team) values are bundled into one notification.
+  group_by: ["alertname", "team"]
+
+  # Wait this long to collect more alerts before sending the first notification.
+  # Prevents 10 rapid-fire messages when a cascade starts.
+  group_wait: 30s
+
+  # After the first notification, wait this long before sending a follow-up
+  # for the same group if new alerts have arrived.
+  group_interval: 5m
+
+  # How often to re-notify for an alert that is still firing (and hasn't been silenced).
+  repeat_interval: 1h
+
+  # Child routes — more specific matchers
+  routes:
+    # Critical alerts get their own receiver (would be PagerDuty in production)
+    - matchers:
+        - severity = "critical"
+      receiver: "slack-critical"
+      # Critical alerts bypass group_wait — page immediately
+      group_wait: 0s
+      repeat_interval: 15m
+
+    # Warning alerts go to the general platform channel
+    - matchers:
+        - severity = "warning"
+      receiver: "slack-platform"
+
+# Inhibition rules: if a "critical" alert is firing for a target,
+# suppress all "warning" alerts for the same target.
+# This prevents a cascade of warnings when the service is completely down.
+inhibit_rules:
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    # Only inhibit if both alerts share the same 'team' label
+    equal: ["team"]
+
+receivers:
+  - name: "slack-platform"
+    slack_configs:
+      - api_url: "https://hooks.slack.com/placeholder"
+        channel: "#alerts-platform"
+        # These Go template fields map to Alertmanager's notification data model
+        title: |
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+          {{ .CommonLabels.alertname }}
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          {{ end }}
+        send_resolved: true   # Send a notification when the alert resolves
+
+  - name: "slack-critical"
+    slack_configs:
+      - api_url: "https://hooks.slack.com/placeholder"
+        channel: "#alerts-critical"
+        title: "🔴 CRITICAL: {{ .CommonLabels.alertname }}"
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+        send_resolved: true

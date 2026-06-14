@@ -1,0 +1,68 @@
+# prometheus/rules/checkout.yml
+groups:
+  - name: checkout.rules
+    # Evaluation interval inherited from prometheus.yml global (15s)
+    rules:
+
+      # ── Availability ────────────────────────────────────────────────────────
+      - alert: CheckoutDown
+        expr: up{job="checkout-service"} == 0
+        for: 1m
+        # for: 1m — tolerate a single missed scrape (15s) before paging.
+        # A process restart during deploy takes ~30s, so 1m avoids deploy noise.
+        # You'll discover this is still too short in the failure scenarios below.
+        labels:
+          severity: critical
+          team: checkout
+        annotations:
+          summary: "Checkout service is unreachable"
+          description: "Prometheus cannot scrape checkout-service. Instance: {{ $labels.instance }}"
+          runbook: "https://wiki.cartpulse.io/runbooks/checkout-down"
+
+      # ── Error Rate ──────────────────────────────────────────────────────────
+      - alert: CheckoutHighErrorRate
+        expr: |
+          (
+            rate(http_request_errors_total{job="checkout-service"}[5m])
+            /
+            rate(http_requests_total{job="checkout-service"}[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          team: checkout
+        annotations:
+          summary: "Checkout error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook: "https://wiki.cartpulse.io/runbooks/checkout-errors"
+
+      # ── Latency ─────────────────────────────────────────────────────────────
+      - alert: CheckoutHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="checkout-service"}[5m])
+            )
+          ) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          team: checkout
+        annotations:
+          summary: "Checkout p95 latency above 1s"
+          description: "p95 latency is {{ $value | humanizeDuration }}."
+          runbook: "https://wiki.cartpulse.io/runbooks/checkout-latency"
+
+      # ── Saturation (connection pool precursor) ──────────────────────────────
+      - alert: CheckoutHighActiveRequests
+        expr: checkout_active_requests > 20
+        for: 1m
+        labels:
+          severity: warning
+          team: checkout
+        annotations:
+          summary: "Checkout has > 20 concurrent in-flight requests"
+          description: |
+            {{ $value }} requests in flight. Possible connection pool saturation.
+            This is the early warning for the March 14 failure mode.

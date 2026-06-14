@@ -1,0 +1,61 @@
+# docker-compose.yml
+services:
+  checkout-service:
+    build: ./checkout-service
+    ports:
+      - "8000:8000"
+    environment:
+      DEGRADED: "true"  # Simulate degraded performance for demo purposes 
+    networks:
+      - cartpulse
+
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules   # ← new: mount rules dir
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    networks:
+      - cartpulse
+
+
+  alertmanager:                                    # ← new service
+    image: prom/alertmanager:v0.27.0
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - cartpulse
+
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - cartpulse
+
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  cartpulse:
+    driver: bridge

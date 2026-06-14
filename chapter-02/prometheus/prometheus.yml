@@ -1,0 +1,24 @@
+# prometheus/prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Tell Prometheus where Alertmanager lives
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# Load all rule files from the rules/ directory
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  - job_name: "checkout-service"
+    static_configs:
+      - targets: ["checkout-service:8000"]
+
+  # Scrape Alertmanager itself — useful for alert pipeline health monitoring
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["alertmanager:9093"]
