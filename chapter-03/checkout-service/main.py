@@ -25,7 +25,7 @@ Three Metrics, chosen to answer Mihail's three questions:
 """
 
 REQUEST_COUNTER = Counter(
-    "http_request_total",
+    "http_requests_total",
     "Total number of HTTP requests received",
     ["handler", "method", "status_code"],
 )
