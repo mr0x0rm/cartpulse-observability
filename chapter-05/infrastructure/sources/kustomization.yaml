@@ -1,15 +1,13 @@
-# chapter-05/apps/cartpulse/kustomization.yaml
+# chapter-05/infrastructure/sources/kustomization.yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cartpulse-apps
+  name: infrastructure-sources
   namespace: flux-system
 spec:
-  interval: 5m
-  path: ./chapter-05/apps/cartpulse
+  interval: 10m
+  path: ./chapter-05/infrastructure/sources
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  dependsOn:
-    - name: kube-prometheus-stack
