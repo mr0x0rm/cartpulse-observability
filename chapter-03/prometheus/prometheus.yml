@@ -1,0 +1,57 @@
+# chapter-03/prometheus/prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  - job_name: "checkout-service"
+    static_configs:
+      - targets: ["checkout-service:8000"]
+        labels:
+          team: "checkout"
+          tier: "frontend"
+
+  - job_name: "catalog-service"
+    static_configs:
+      - targets: ["catalog-service:8000"]
+        labels:
+          team: "catalog"
+          tier: "frontend"
+
+  - job_name: "search-service"
+    static_configs:
+      - targets: ["search-service:8000"]
+        labels:
+          team: "search"
+          tier: "frontend"
+
+  - job_name: "payments-service"
+    static_configs:
+      - targets: ["payments-service:8000"]
+        labels:
+          team: "payments"
+          tier: "backend"
+
+  - job_name: "recommendations-service"
+    static_configs:
+      - targets: ["recommendations-service:8000"]
+        labels:
+          team: "recommendations"
+          tier: "backend"
+
+  # Node Exporter — host infrastructure metrics
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["alertmanager:9093"]

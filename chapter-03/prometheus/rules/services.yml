@@ -1,0 +1,61 @@
+# chapter-03/prometheus/rules/services.yml
+groups:
+  - name: cartpulse.service.rules
+    rules:
+
+      # Covers all five application services via job label matching
+      # node-exporter and alertmanager are excluded by the job selector pattern
+
+      - alert: ServiceDown
+        expr: |
+          up{job=~"checkout-service|catalog-service|search-service|payments-service|recommendations-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} is unreachable"
+          description: "Prometheus cannot scrape {{ $labels.job }} (instance: {{ $labels.instance }})"
+          runbook: "https://wiki.cartpulse.io/runbooks/service-down"
+
+      - alert: ServiceHighErrorRate
+        expr: |
+          (
+            sum by (job) (rate(http_request_errors_total[5m]))
+            /
+            sum by (job) (rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+          runbook: "https://wiki.cartpulse.io/runbooks/high-error-rate"
+
+      - alert: ServiceHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, job) (
+              rate(http_request_duration_seconds_bucket[5m])
+            )
+          ) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} p95 latency above 1s"
+          description: "p95 latency is {{ $value | humanizeDuration }} for {{ $labels.job }}"
+          runbook: "https://wiki.cartpulse.io/runbooks/high-latency"
+
+      # Checkout-specific — only checkout-service emits this gauge
+      - alert: CheckoutHighActiveRequests
+        expr: checkout_active_requests > 20
+        for: 1m
+        labels:
+          severity: warning
+          team: checkout
+        annotations:
+          summary: "Checkout has > 20 concurrent in-flight requests"
+          description: "{{ $value }} requests in flight — possible connection pool saturation"
+          runbook: "https://wiki.cartpulse.io/runbooks/checkout-saturation"

@@ -1,0 +1,10 @@
+# chapter-03/grafana/provisioning/dashboards/dashboards.yml
+apiVersion: 1
+providers:
+  - name: "cartpulse"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/provisioning/dashboards

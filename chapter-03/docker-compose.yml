@@ -1,0 +1,103 @@
+# chapter-03/docker-compose.yml
+services:
+  checkout-service:
+    build: ./checkout-service
+    ports:
+      - "8000:8000"
+    environment:
+      DEGRADED: "false"
+    networks:
+      - cartpulse
+
+  catalog-service:
+    build: ./catalog-service
+    ports:
+      - "8001:8000"
+    networks:
+      - cartpulse
+
+  search-service:
+    build: ./search-service
+    ports:
+      - "8002:8000"
+    networks:
+      - cartpulse
+
+  payments-service:
+    build: ./payments-service
+    ports:
+      - "8003:8000"
+    networks:
+      - cartpulse
+
+  recommendations-service:
+    build: ./recommendations-service
+    ports:
+      - "8004:8000"
+    networks:
+      - cartpulse
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    ports:
+      - "9100:9100"
+    # pid: host gives node-exporter access to host process metrics
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - cartpulse
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    networks:
+      - cartpulse
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - cartpulse
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - cartpulse
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  cartpulse:
+    driver: bridge
