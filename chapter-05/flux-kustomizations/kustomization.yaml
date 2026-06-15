@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - infrastructure-sources.yaml
   - kube-prometheus-stack.yaml
-  - ../../chapter-06/flux-kustomizations/kustomization.yaml
+  - ../../chapter-06/flux-kustomizations
