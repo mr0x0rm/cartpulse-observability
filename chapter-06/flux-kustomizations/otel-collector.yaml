@@ -1,0 +1,15 @@
+# chapter-06/flux-kustomizations/otel-collector.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: otel-collector
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./chapter-06/infrastructure/otel-collector
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: jaeger

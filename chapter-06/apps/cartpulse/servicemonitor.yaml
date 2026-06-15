@@ -1,0 +1,22 @@
+# chapter-04/kubernetes/checkout-service/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: checkout-service
+  namespace: cartpulse
+  labels:
+    # This label tells the Prometheus Operator to pick up this ServiceMonitor
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      # Must match Service metadata.labels exactly
+      app: checkout-service
+      team: checkout
+  namespaceSelector:
+    matchNames:
+      - cartpulse
+  endpoints:
+    - port: http-metrics    # matches Service ports[].name
+      interval: 15s
+      path: /metrics

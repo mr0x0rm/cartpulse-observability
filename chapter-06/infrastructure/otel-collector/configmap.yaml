@@ -1,0 +1,47 @@
+# chapter-06/infrastructure/otel-collector/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: cartpulse
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+
+    processors:
+      batch:
+        # Send spans in batches of up to 512, or every 5 seconds
+        send_batch_size: 512
+        timeout: 5s
+
+      # Adds k8s metadata to spans as Resource attributes
+      # (pod name, namespace, node — things the app doesn't know about itself)
+      resource:
+        attributes:
+          - key: deployment.environment
+            value: "local"
+            action: upsert
+
+    exporters:
+      # Send traces to Jaeger
+      otlp/jaeger:
+        endpoint: "jaeger.cartpulse.svc.cluster.local:4317"
+        tls:
+          insecure: true
+
+      # Log spans to collector stdout — useful for debugging
+      debug:
+        verbosity: basic
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [otlp/jaeger, debug]

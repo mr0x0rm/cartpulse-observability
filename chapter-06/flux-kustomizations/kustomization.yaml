@@ -1,0 +1,7 @@
+# chapter-06/flux-kustomizations/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - jaeger.yaml
+  - otel-collector.yaml
+  - cartpulse-apps.yaml

@@ -1,0 +1,61 @@
+# chapter-06/apps/cartpulse/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-service
+  namespace: cartpulse
+  labels:
+    app: checkout-service
+    team: checkout
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout-service
+  template:
+    metadata:
+      labels:
+        app: checkout-service
+        team: checkout
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+        - name: checkout-service
+          image: localhost/checkout-service:v2-otel
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+              name: http-metrics
+          env:
+            - name: DEGRADED
+              value: "false"
+            - name: ENVIRONMENT
+              value: "local"
+            - name: SERVICE_VERSION
+              value: "0.2.0"
+            # Point to OTel Collector DaemonSet on the same node
+            # Using the node's IP via Downward API is more robust than
+            # a ClusterIP service for DaemonSet-per-node topology
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.cartpulse.svc.cluster.local:4317"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
