@@ -20,7 +20,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./chapter-05/flux-system
+  path: ./chapter-05/flux-kustomizations
   prune: true
   sourceRef:
     kind: GitRepository
