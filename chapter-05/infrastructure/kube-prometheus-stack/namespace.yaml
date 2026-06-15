@@ -1,0 +1,5 @@
+# chapter-05/infrastructure/kube-prometheus-stack/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
