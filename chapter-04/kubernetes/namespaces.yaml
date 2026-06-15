@@ -1,0 +1,9 @@
+# chapter-04/kubernetes/namespaces.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cartpulse
+  labels:
+    # This label is used by NetworkPolicies and kube-prometheus-stack
+    # ServiceMonitor namespace selector in later chapters
+    team: platform

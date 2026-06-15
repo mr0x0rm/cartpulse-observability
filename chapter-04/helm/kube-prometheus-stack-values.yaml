@@ -1,0 +1,38 @@
+# chapter-04/helm/kube-prometheus-stack-values.yaml
+# Only override what CartPulse needs to change from defaults.
+# The chart's defaults handle RBAC, CRDs, service accounts automatically.
+
+prometheus:
+  prometheusSpec:
+    # Scrape interval matching our established convention
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+    retention: "7d"
+    # Allow Prometheus to discover ServiceMonitors from ALL namespaces
+    # Default behaviour only watches the release namespace — too restrictive
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    # Same for PrometheusRules
+    ruleSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+
+grafana:
+  enabled: true
+  adminPassword: "cartpulse"
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Admin
+
+alertmanager:
+  enabled: true
+
+# Node Exporter: DaemonSet, one pod per node — same role as Docker chapter
+nodeExporter:
+  enabled: true
+
+# kube-state-metrics: watches K8s API, exposes kube_* metrics
+kubeStateMetrics:
+  enabled: true

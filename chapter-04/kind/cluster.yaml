@@ -1,0 +1,11 @@
+# chapter-04/kind/cluster.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: cartpulse
+nodes:
+  - role: control-plane
+  - role: worker
+    # Labels used later in Chapter 16 (multi-cluster)
+    # Establishing them now costs nothing and avoids retrofitting
+  - role: worker
+  - role: worker

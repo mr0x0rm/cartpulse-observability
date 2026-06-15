@@ -1,0 +1,19 @@
+# chapter-04/kubernetes/checkout-service/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout-service
+  namespace: cartpulse
+  labels:
+    # These labels are matched by the ServiceMonitor selector below
+    # They must match exactly — this is the most common ServiceMonitor mistake
+    app: checkout-service
+    team: checkout
+spec:
+  selector:
+    # Matches pod labels in deployment.yaml
+    app: checkout-service
+  ports:
+    - name: http-metrics    # must match containerPort name in deployment.yaml
+      port: 8000
+      targetPort: http-metrics

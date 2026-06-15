@@ -1,0 +1,56 @@
+# chapter-04/kubernetes/checkout-service/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-service
+  namespace: cartpulse
+  labels:
+    app: checkout-service
+    team: checkout
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout-service
+  template:
+    metadata:
+      labels:
+        app: checkout-service
+        team: checkout
+      annotations:
+        # Prometheus can also scrape via pod annotations (legacy method)
+        # We use ServiceMonitor instead, but the annotation is informational
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+        - name: checkout-service
+          image: localhost/checkout-service:latest
+          # Must be Never for locally loaded kind images
+          # (prevents kind from trying to pull from a registry)
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+              name: http-metrics   # named port — referenced in ServiceMonitor
+          env:
+            - name: DEGRADED
+              value: "false"
+          resources:
+            requests:
+              cpu: "100m"       # 0.1 CPU cores
+              memory: "64Mi"
+            limits:
+              cpu: "500m"       # 0.5 CPU cores
+              memory: "128Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
